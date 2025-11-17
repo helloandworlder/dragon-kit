@@ -238,6 +238,8 @@ BANNER = """
 TAGLINE = "Dragon Kit · 次世代规范驱动开发工具包"
 
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent.parent
+ASSETS_ROOT = Path(__file__).resolve().parent / "assets"
+DEFAULT_DOCS_DIR = ASSETS_ROOT / "docs"
 
 DOC_OVERRIDE_REGISTRY = {
     "AGENTS": {
@@ -270,6 +272,7 @@ def resolve_document_override_source(
     candidates = [
         home_root / ".specify" / filename,
         repo_root / filename,
+        DEFAULT_DOCS_DIR / filename,
     ]
 
     for candidate in candidates:

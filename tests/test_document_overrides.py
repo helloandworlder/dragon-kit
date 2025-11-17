@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from dragon_cli.__init__ import (
+    DEFAULT_DOCS_DIR,
     apply_document_overrides,
     resolve_document_override_source,
 )
@@ -59,3 +60,17 @@ def test_apply_document_overrides_copies_selected_docs(tmp_path: Path):
 
     assert "AGENTS" in copied
     assert (destination / "AGENTS.md").read_text(encoding="utf-8") == "repo-version"
+
+
+def test_resolve_document_override_uses_packaged_defaults(tmp_path: Path):
+    repo_root = tmp_path / "repo"
+    home_root = tmp_path / "home"
+
+    source = resolve_document_override_source(
+        "AGENTS.md",
+        repo_root=repo_root,
+        home_root=home_root,
+    )
+
+    assert source is not None
+    assert source.read_text(encoding="utf-8") == (DEFAULT_DOCS_DIR / "AGENTS.md").read_text(encoding="utf-8")
