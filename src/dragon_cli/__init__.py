@@ -32,6 +32,7 @@ import tempfile
 import shutil
 import shlex
 import json
+from collections import OrderedDict
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
@@ -223,6 +224,7 @@ AGENT_CONFIG = {
 }
 
 SCRIPT_TYPE_CHOICES = {"sh": "POSIX Shell (bash/zsh)", "ps": "PowerShell"}
+DEFAULT_AI_AGENT = "copilot"
 
 CLAUDE_LOCAL_PATH = Path.home() / ".claude" / "local" / "claude"
 
@@ -258,6 +260,15 @@ DOC_OVERRIDE_REGISTRY = {
         "prompt": "是否使用自定义 CLAUDE.md 覆盖模板?",
     },
 }
+
+DOC_SELECTION_OPTIONS = OrderedDict(
+    [
+        ("AC", "同时覆盖 AGENTS.md 与 CLAUDE.md"),
+        ("A", "仅覆盖 AGENTS.md"),
+        ("C", "仅覆盖 CLAUDE.md"),
+        ("N", "不覆盖任何文档"),
+    ]
+)
 
 
 def resolve_document_override_source(
@@ -299,7 +310,6 @@ def apply_document_overrides(
 
     repo_root = repo_root or PACKAGE_ROOT
     home_root = home_root or Path.home()
-
     copied: set[str] = set()
     for key in doc_keys:
         key_upper = key.upper()
@@ -330,54 +340,57 @@ def normalize_doc_keys(doc_values: Iterable[str]) -> Tuple[list[str], list[str]]
     for value in doc_values:
         if not value:
             continue
-        token = value.upper()
+        token = value.strip().upper()
         if token in {"AC", "CA", "ALL", "BOTH"}:
-            normalized.extend(DOC_SELECTION_ORDER)
+            for doc in DOC_SELECTION_ORDER:
+                if doc not in normalized:
+                    normalized.append(doc)
             continue
         mapped = DOC_KEY_ALIASES.get(token)
-        if mapped:
+        if mapped and mapped not in normalized:
             normalized.append(mapped)
-        else:
+        elif not mapped:
             invalid.append(value)
 
     ordered: list[str] = []
     for doc in DOC_SELECTION_ORDER:
-        if doc in normalized and doc not in ordered:
+        if doc in normalized:
             ordered.append(doc)
 
     return ordered, invalid
 
 
-def prompt_document_override_selection() -> list[str]:
-    """Prompt user to select document overrides with single input."""
+def select_document_override_with_arrows() -> list[str]:
+    """Interactive single-choice selector for document overrides."""
 
-    prompt_lines = [
-        "请选择文档覆盖策略:",
-        "[AC] 同时覆盖 AGENTS.md 与 CLAUDE.md",
-        "[A] 仅覆盖 AGENTS.md",
-        "[C] 仅覆盖 CLAUDE.md",
-        "[N] 不覆盖",
-    ]
-    default_choice = "AC"
+    choice = select_with_arrows(DOC_SELECTION_OPTIONS, "请选择文档覆盖策略", "AC")
+    if choice == "AC":
+        return DOC_SELECTION_ORDER.copy()
+    if choice == "A":
+        return ["AGENTS"]
+    if choice == "C":
+        return ["CLAUDE"]
+    return []
 
-    while True:
-        choice = typer.prompt("\n".join(prompt_lines), default=default_choice)
-        if choice is None:
-            choice = default_choice
-        choice = choice.strip().upper()
-        if not choice:
-            choice = default_choice
 
-        if choice in {"AC", "CA", "ALL", "BOTH"}:
-            return DOC_SELECTION_ORDER.copy()
-        if choice in {"A", "AGENTS"}:
-            return ["AGENTS"]
-        if choice in {"C", "CLAUDE"}:
-            return ["CLAUDE"]
-        if choice in {"N", "NO", "NONE"}:
-            return []
+def normalize_agent_keys(agent_values: Iterable[str]) -> Tuple[list[str], list[str]]:
+    """Normalize AI agent keys, preserving order and de-duplicating."""
 
-        console.print("[yellow]输入无效，请输入 AC/A/C/N[/yellow]")
+    normalized: list[str] = []
+    invalid: list[str] = []
+    seen: set[str] = set()
+
+    for value in agent_values:
+        if not value:
+            continue
+        token = value.strip().lower()
+        if token in AGENT_CONFIG and token not in seen:
+            normalized.append(token)
+            seen.add(token)
+        elif token not in AGENT_CONFIG:
+            invalid.append(value)
+
+    return normalized, invalid
 class StepTracker:
     """Track and render hierarchical steps without emojis, similar to Claude Code tree output.
     Supports live auto-refresh via an attached refresh callback.
@@ -557,6 +570,82 @@ def select_with_arrows(options: dict, prompt_text: str = "请选择一个选项"
         raise typer.Exit(1)
 
     return selected_key
+
+
+def select_multiple_with_arrows(
+    options: dict,
+    prompt_text: str = "请选择一个或多个选项",
+    default_selected: Optional[List[str]] = None,
+    min_selection: int = 1,
+) -> list[str]:
+    """Interactive multi-select using arrows + space."""
+
+    option_keys = list(options.keys())
+    if not option_keys:
+        return []
+
+    selected_index = 0
+    selected_set = set(default_selected or []) & set(option_keys)
+    if not selected_set:
+        selected_set.add(option_keys[0])
+
+    status_message = ""
+
+    def create_panel():
+        table = Table.grid(padding=(0, 2))
+        table.add_column(style="cyan", justify="left", width=3)
+        table.add_column(style="white", justify="left")
+
+        for i, key in enumerate(option_keys):
+            checkbox = "[cyan]☑[/cyan]" if key in selected_set else "[bright_black]☐[/bright_black]"
+            label = f"[cyan]{key}[/cyan] [dim]({options[key]})[/dim]"
+            pointer = "▶" if i == selected_index else " "
+            table.add_row(pointer, f"{checkbox} {label}")
+
+        table.add_row("", "")
+        instructions = "使用 ↑/↓ 移动，空格选中/取消，Enter 确认，Esc 取消"
+        table.add_row("", f"[dim]{instructions}[/dim]")
+        if status_message:
+            table.add_row("", f"[yellow]{status_message}[/yellow]")
+
+        return Panel(table, title=f"[bold]{prompt_text}[/bold]", border_style="cyan", padding=(1, 2))
+
+    console.print()
+
+    def run_selection_loop():
+        nonlocal selected_index, status_message
+        with Live(create_panel(), console=console, transient=True, auto_refresh=False) as live:
+            while True:
+                try:
+                    key = get_key()
+                    if key == 'up':
+                        selected_index = (selected_index - 1) % len(option_keys)
+                    elif key == 'down':
+                        selected_index = (selected_index + 1) % len(option_keys)
+                    elif key == 'enter':
+                        if len(selected_set) >= min_selection:
+                            return
+                        status_message = "至少选择一个选项"
+                    elif key == 'escape':
+                        console.print("\n[yellow]已取消选择[/yellow]")
+                        raise typer.Exit(1)
+                    else:
+                        current_key = option_keys[selected_index]
+                        if key == ' ' or key == readchar.key.SPACE:
+                            if current_key in selected_set and len(selected_set) > min_selection:
+                                selected_set.remove(current_key)
+                            elif current_key in selected_set and len(selected_set) <= min_selection:
+                                status_message = "至少保留一个选项"
+                            else:
+                                selected_set.add(current_key)
+                    live.update(create_panel(), refresh=True)
+                except KeyboardInterrupt:
+                    console.print("\n[yellow]已取消选择[/yellow]")
+                    raise typer.Exit(1)
+
+    run_selection_loop()
+
+    return [key for key in option_keys if key in selected_set]
 
 console = Console()
 
@@ -883,14 +972,42 @@ def download_template_from_github(ai_assistant: str, download_dir: Path, *, scri
     }
     return zip_path, metadata
 
-def download_and_extract_template(project_path: Path, ai_assistant: str, script_type: str, is_current_dir: bool = False, *, verbose: bool = True, tracker: StepTracker | None = None, client: httpx.Client = None, debug: bool = False, github_token: str = None) -> Path:
+def download_and_extract_template(
+    project_path: Path,
+    ai_assistant: str,
+    script_type: str,
+    is_current_dir: bool = False,
+    *,
+    verbose: bool = True,
+    tracker: StepTracker | None = None,
+    tracker_prefix: str | None = None,
+    client: httpx.Client = None,
+    debug: bool = False,
+    github_token: str = None,
+) -> Path:
     """Download the latest release and extract it to create a new project.
     Returns project_path. Uses tracker if provided (with keys: fetch, download, extract, cleanup)
     """
     current_dir = Path.cwd()
+    tracker_id = tracker_prefix or ai_assistant
 
-    if tracker:
-        tracker.start("fetch", "查询 GitHub Release")
+    def step_key(name: str) -> str:
+        return f"{name}-{tracker_id}"
+
+    def tracker_start(name: str, label: str, detail: str = ""):
+        if tracker:
+            tracker.add(step_key(name), label)
+            tracker.start(step_key(name), detail)
+
+    def tracker_complete(name: str, detail: str = ""):
+        if tracker:
+            tracker.complete(step_key(name), detail)
+
+    def tracker_error(name: str, detail: str = ""):
+        if tracker:
+            tracker.error(step_key(name), detail)
+
+    tracker_start("fetch", f"获取模板（{ai_assistant}）", "查询 GitHub Release")
     try:
         zip_path, meta = download_template_from_github(
             ai_assistant,
@@ -902,22 +1019,17 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
             debug=debug,
             github_token=github_token
         )
-        if tracker:
-            tracker.complete("fetch", f"版本 {meta['release']} ({meta['size']:,} bytes)")
-            tracker.add("download", "下载模板压缩包")
-            tracker.complete("download", meta['filename'])
+        tracker_complete("fetch", f"版本 {meta['release']} ({meta['size']:,} bytes)")
+        tracker_start("download", f"下载模板（{ai_assistant}）")
+        tracker_complete("download", meta['filename'])
     except Exception as e:
-        if tracker:
-            tracker.error("fetch", str(e))
-        else:
-            if verbose:
-                console.print(f"[red]下载模板失败：[/red] {e}")
+        tracker_error("fetch", str(e))
+        if not tracker and verbose:
+            console.print(f"[red]下载模板失败：[/red] {e}")
         raise
 
-    if tracker:
-        tracker.add("extract", "解压模板")
-        tracker.start("extract")
-    elif verbose:
+    tracker_start("extract", f"解压模板（{ai_assistant}）")
+    if not tracker and verbose:
         console.print("正在解压模板...")
 
     try:
@@ -926,9 +1038,9 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
 
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_contents = zip_ref.namelist()
+            tracker_start("zip-list", f"列出归档内容（{ai_assistant}）")
             if tracker:
-                tracker.start("zip-list")
-                tracker.complete("zip-list", f"{len(zip_contents)} 个条目")
+                tracker_complete("zip-list", f"{len(zip_contents)} 个条目")
             elif verbose:
                 console.print(f"[cyan]压缩包包含 {len(zip_contents)} 个条目[/cyan]")
 
@@ -938,18 +1050,18 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
                     zip_ref.extractall(temp_path)
 
                     extracted_items = list(temp_path.iterdir())
+                    tracker_start("extracted-summary", f"解压摘要（{ai_assistant}）")
                     if tracker:
-                        tracker.start("extracted-summary")
-                        tracker.complete("extracted-summary", f"临时目录 {len(extracted_items)} 项")
+                        tracker_complete("extracted-summary", f"临时目录 {len(extracted_items)} 项")
                     elif verbose:
                         console.print(f"[cyan]已解压 {len(extracted_items)} 个条目到临时目录[/cyan]")
 
                     source_dir = temp_path
                     if len(extracted_items) == 1 and extracted_items[0].is_dir():
                         source_dir = extracted_items[0]
+                        tracker_start("flatten", f"展开嵌套目录（{ai_assistant}）")
                         if tracker:
-                            tracker.add("flatten", "展开嵌套目录")
-                            tracker.complete("flatten")
+                            tracker_complete("flatten")
                         elif verbose:
                             console.print(f"[cyan]检测到额外的嵌套目录，正在展平[/cyan]")
 
@@ -981,9 +1093,9 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
                 zip_ref.extractall(project_path)
 
                 extracted_items = list(project_path.iterdir())
+                tracker_start("extracted-summary", f"解压摘要（{ai_assistant}）")
                 if tracker:
-                    tracker.start("extracted-summary")
-                    tracker.complete("extracted-summary", f"顶层 {len(extracted_items)} 项")
+                    tracker_complete("extracted-summary", f"顶层 {len(extracted_items)} 项")
                 elif verbose:
                     console.print(f"[cyan]已解压 {len(extracted_items)} 个条目到 {project_path}[/cyan]")
                     for item in extracted_items:
@@ -998,36 +1110,28 @@ def download_and_extract_template(project_path: Path, ai_assistant: str, script_
                     project_path.rmdir()
 
                     shutil.move(str(temp_move_dir), str(project_path))
+                    tracker_start("flatten", f"展开嵌套目录（{ai_assistant}）")
                     if tracker:
-                        tracker.add("flatten", "展开嵌套目录")
-                        tracker.complete("flatten")
+                        tracker_complete("flatten")
                     elif verbose:
                         console.print(f"[cyan]Flattened nested directory structure[/cyan]")
 
     except Exception as e:
-        if tracker:
-            tracker.error("extract", str(e))
-        else:
-            if verbose:
-                console.print(f"[red]解压模板失败：[/red] {e}")
-                if debug:
-                    console.print(Panel(str(e), title="Extraction Error", border_style="red"))
+        tracker_error("extract", str(e))
+        if not tracker and verbose:
+            console.print(f"[red]解压模板失败：[/red] {e}")
+            if debug:
+                console.print(Panel(str(e), title="Extraction Error", border_style="red"))
 
         if not is_current_dir and project_path.exists():
             shutil.rmtree(project_path)
         raise typer.Exit(1)
     else:
-        if tracker:
-            tracker.complete("extract")
+        tracker_complete("extract")
     finally:
-        if tracker:
-            tracker.add("cleanup", "Remove temporary archive")
-
         if zip_path.exists():
             zip_path.unlink()
-            if tracker:
-                tracker.complete("cleanup")
-            elif verbose:
+            if not tracker and verbose:
                 console.print(f"Cleaned up: {zip_path.name}")
 
     return project_path
@@ -1080,7 +1184,7 @@ def ensure_executable_scripts(project_path: Path, tracker: StepTracker | None = 
 @app.command()
 def init(
     project_name: str = typer.Argument(None, help="项目名称；使用 '.' 或 --here 可在当前目录初始化"),
-    ai_assistant: str = typer.Option(None, "--ai", help="选择 AI 助手：claude、gemini、copilot、cursor-agent、qwen、opencode、codex、windsurf、kilocode、auggie、codebuddy、amp、shai、q、droid"),
+    ai_assistant: Optional[List[str]] = typer.Option(None, "--ai", help="选择 AI 助手（可多次指定）：claude、gemini、copilot、cursor-agent、qwen、opencode、codex、windsurf、kilocode、auggie、codebuddy、amp、shai、q、droid"),
     script_type: str = typer.Option(None, "--script", help="脚本类型：sh 或 ps"),
     ignore_agent_tools: bool = typer.Option(False, "--ignore-agent-tools", help="跳过 AI 助手 CLI 检查"),
     no_git: bool = typer.Option(False, "--no-git", help="跳过 Git 仓库初始化"),
@@ -1156,37 +1260,51 @@ def init(
         if not should_init_git:
             console.print("[yellow]未检测到 Git，将跳过仓库初始化[/yellow]")
 
+    ai_choices = OrderedDict((key, config["name"]) for key, config in AGENT_CONFIG.items())
+    selected_agents: list[str] = []
+
     if ai_assistant:
-        if ai_assistant not in AGENT_CONFIG:
-            console.print(f"[red]错误：[/red] 无效的 AI 助手 '{ai_assistant}'。可选值：{', '.join(AGENT_CONFIG.keys())}")
+        selected_agents, invalid_agents = normalize_agent_keys(ai_assistant)
+        if invalid_agents:
+            console.print(f"[red]错误：[/red] 无效的 AI 助手：{', '.join(invalid_agents)}")
             raise typer.Exit(1)
-        selected_ai = ai_assistant
-    else:
-        # Create options dict for selection (agent_key: display_name)
-        ai_choices = {key: config["name"] for key, config in AGENT_CONFIG.items()}
-        selected_ai = select_with_arrows(
-            ai_choices, 
-            "请选择首选 AI 助手:", 
-            "copilot"
+        if not selected_agents:
+            console.print("[red]错误：[/red] --ai 未提供有效的助手标识")
+            raise typer.Exit(1)
+    elif sys.stdin.isatty():
+        prompt = "请选择 AI 助手（空格切换选中，Enter 确认）"
+        selected_agents = select_multiple_with_arrows(
+            ai_choices,
+            prompt,
+            default_selected=[DEFAULT_AI_AGENT],
         )
+    else:
+        selected_agents = [DEFAULT_AI_AGENT]
+
+    if not selected_agents:
+        console.print("[red]错误：[/red] 至少需要选择一个 AI 助手")
+        raise typer.Exit(1)
 
     if not ignore_agent_tools:
-        agent_config = AGENT_CONFIG.get(selected_ai)
-        if agent_config and agent_config["requires_cli"]:
+        for agent_key in selected_agents:
+            agent_config = AGENT_CONFIG.get(agent_key)
+            if not agent_config or not agent_config["requires_cli"]:
+                continue
             install_url = agent_config["install_url"]
-            if not check_tool(selected_ai):
-                error_panel = Panel(
-                    f"[cyan]{selected_ai}[/cyan] CLI 未找到\n"
-                    f"安装文档: [cyan]{install_url}[/cyan]\n"
-                    f"{agent_config['name']} 为当前模板必需。\n\n"
-                    "提示：可使用 [cyan]--ignore-agent-tools[/cyan] 跳过检查",
-                    title="[red]AI 工具检测失败[/red]",
-                    border_style="red",
-                    padding=(1, 2)
-                )
-                console.print()
-                console.print(error_panel)
-                raise typer.Exit(1)
+            if check_tool(agent_key):
+                continue
+            error_panel = Panel(
+                f"[cyan]{agent_key}[/cyan] CLI 未找到\n"
+                f"安装文档: [cyan]{install_url}[/cyan]\n"
+                f"{agent_config['name']} 为当前模板必需。\n\n"
+                "提示：可使用 [cyan]--ignore-agent-tools[/cyan] 跳过检查",
+                title="[red]AI 工具检测失败[/red]",
+                border_style="red",
+                padding=(1, 2)
+            )
+            console.print()
+            console.print(error_panel)
+            raise typer.Exit(1)
 
     if script_type:
         if script_type not in SCRIPT_TYPE_CHOICES:
@@ -1207,7 +1325,7 @@ def init(
         for invalid in invalid_docs:
             console.print(f"[yellow]提示：[/yellow] 忽略未知文档选项 {invalid}")
     elif sys.stdin.isatty():
-        selected_docs = prompt_document_override_selection()
+        selected_docs = select_document_override_with_arrows()
 
     # Ensure final order始终为 AGENTS -> CLAUDE
     selected_docs, _ = normalize_doc_keys(selected_docs or [])
@@ -1217,7 +1335,8 @@ def init(
     else:
         console.print(f"[cyan]文档覆盖：[/cyan] 无")
 
-    console.print(f"[cyan]AI 助手：[/cyan] {selected_ai}")
+    ai_display = ", ".join(selected_agents)
+    console.print(f"[cyan]AI 助手：[/cyan] {ai_display}")
     console.print(f"[cyan]脚本类型：[/cyan] {selected_script}")
 
     tracker = StepTracker("Dragon 初始化进度")
@@ -1227,15 +1346,10 @@ def init(
     tracker.add("precheck", "检查必要工具")
     tracker.complete("precheck", "已完成")
     tracker.add("ai-select", "选择 AI 助手")
-    tracker.complete("ai-select", f"{selected_ai}")
+    tracker.complete("ai-select", ai_display)
     tracker.add("script-select", "选择脚本类型")
     tracker.complete("script-select", selected_script)
     for key, label in [
-        ("fetch", "获取最新模板"),
-        ("download", "下载模板压缩包"),
-        ("extract", "解压模板"),
-        ("zip-list", "列出归档内容"),
-        ("extracted-summary", "解压摘要"),
         ("chmod", "修复脚本权限"),
         ("docs", "覆盖指定文档"),
         ("cleanup", "清理临时文件"),
@@ -1256,7 +1370,21 @@ def init(
             local_ssl_context = ssl_context if verify else False
             local_client = httpx.Client(verify=local_ssl_context)
 
-            download_and_extract_template(project_path, selected_ai, selected_script, here, verbose=False, tracker=tracker, client=local_client, debug=debug, github_token=github_token)
+            for agent_key in selected_agents:
+                download_and_extract_template(
+                    project_path,
+                    agent_key,
+                    selected_script,
+                    here,
+                    verbose=False,
+                    tracker=tracker,
+                    tracker_prefix=agent_key,
+                    client=local_client,
+                    debug=debug,
+                    github_token=github_token,
+                )
+
+            tracker.complete("cleanup", "模板压缩包已删除")
 
             ensure_executable_scripts(project_path, tracker=tracker)
 
@@ -1335,11 +1463,17 @@ def init(
         console.print(git_error_panel)
 
     # Agent folder security notice
-    agent_config = AGENT_CONFIG.get(selected_ai)
-    if agent_config:
-        agent_folder = agent_config["folder"]
+    security_lines = []
+    for agent_key in selected_agents:
+        agent_config = AGENT_CONFIG.get(agent_key)
+        if not agent_config:
+            continue
+        security_lines.append(f"{agent_config['name']} → {agent_config['folder']}")
+
+    if security_lines:
         security_notice = Panel(
-            f"部分代理会在项目内的专用目录缓存令牌或账号信息。建议将 [cyan]{agent_folder}[/cyan] 添加到 [cyan].gitignore[/cyan]，避免敏感数据被提交。",
+            "部分代理会在项目内的专用目录缓存令牌或账号信息。建议将以下目录添加到 [cyan].gitignore[/cyan]，避免敏感数据被提交。\n\n" +
+            "\n".join(f"- {line}" for line in security_lines),
             title="[yellow]代理目录安全提醒[/yellow]",
             border_style="yellow",
             padding=(1, 2)
@@ -1356,7 +1490,7 @@ def init(
         step_num = 2
 
     # Add Codex-specific setup step if needed
-    if selected_ai == "codex":
+    if "codex" in selected_agents:
         codex_path = project_path / ".codex"
         quoted_path = shlex.quote(str(codex_path))
         if os.name == "nt":  # Windows
