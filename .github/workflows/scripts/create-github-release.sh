@@ -16,35 +16,37 @@ VERSION="$1"
 VERSION_NO_V=${VERSION#v}
 
 gh release create "$VERSION" \
-  .genreleases/spec-kit-template-copilot-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-copilot-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-claude-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-claude-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-gemini-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-gemini-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-cursor-agent-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-cursor-agent-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-opencode-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-opencode-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-qwen-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-qwen-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-windsurf-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-windsurf-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-codex-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-codex-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-kilocode-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-kilocode-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-auggie-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-auggie-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-roo-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-roo-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-codebuddy-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-codebuddy-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-amp-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-amp-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-shai-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-shai-ps-"$VERSION".zip \
-  .genreleases/spec-kit-template-q-sh-"$VERSION".zip \
-  .genreleases/spec-kit-template-q-ps-"$VERSION".zip \
-  --title "Spec Kit Templates - $VERSION_NO_V" \
+  .genreleases/dragon-kit-template-copilot-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-copilot-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-claude-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-claude-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-gemini-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-gemini-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-cursor-agent-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-cursor-agent-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-opencode-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-opencode-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-qwen-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-qwen-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-windsurf-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-windsurf-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-codex-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-codex-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-kilocode-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-kilocode-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-auggie-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-auggie-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-roo-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-roo-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-codebuddy-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-codebuddy-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-amp-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-amp-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-shai-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-shai-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-droid-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-droid-ps-"$VERSION".zip \
+  .genreleases/dragon-kit-template-q-sh-"$VERSION".zip \
+  .genreleases/dragon-kit-template-q-ps-"$VERSION".zip \
+  --title "Dragon Kit Templates - $VERSION_NO_V" \
   --notes-file release_notes.md

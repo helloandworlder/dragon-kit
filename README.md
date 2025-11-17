@@ -1,6 +1,6 @@
 <div align="center">
-    <img src="./media/logo_small.webp" alt="Spec Kit Logo"/>
-    <h1>🌱 Spec Kit</h1>
+    <img src="./media/logo_small.webp" alt="Dragon Kit Logo"/>
+    <h1>🌱 Dragon Kit</h1>
     <h3><em>Build high-quality software faster.</em></h3>
 </div>
 
@@ -9,10 +9,10 @@
 </p>
 
 <p align="center">
-    <a href="https://github.com/github/spec-kit/actions/workflows/release.yml"><img src="https://github.com/github/spec-kit/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
-    <a href="https://github.com/github/spec-kit/stargazers"><img src="https://img.shields.io/github/stars/github/spec-kit?style=social" alt="GitHub stars"/></a>
-    <a href="https://github.com/github/spec-kit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/github/spec-kit" alt="License"/></a>
-    <a href="https://github.github.io/spec-kit/"><img src="https://img.shields.io/badge/docs-GitHub_Pages-blue" alt="Documentation"/></a>
+    <a href="https://github.com/helloandworlder/dragon-kit/actions/workflows/release.yml"><img src="https://github.com/helloandworlder/dragon-kit/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
+    <a href="https://github.com/helloandworlder/dragon-kit/stargazers"><img src="https://img.shields.io/github/stars/helloandworlder/dragon-kit?style=social" alt="GitHub stars"/></a>
+    <a href="https://github.com/helloandworlder/dragon-kit/blob/main/LICENSE"><img src="https://img.shields.io/github/license/helloandworlder/dragon-kit" alt="License"/></a>
+    <a href="https://helloandworlder.github.io/dragon-kit/"><img src="https://img.shields.io/badge/docs-GitHub_Pages-blue" alt="Documentation"/></a>
 </p>
 
 ---
@@ -23,7 +23,7 @@
 - [⚡ Get Started](#-get-started)
 - [📽️ Video Overview](#️-video-overview)
 - [🤖 Supported AI Agents](#-supported-ai-agents)
-- [🔧 Specify CLI Reference](#-specify-cli-reference)
+- [🔧 Dragon CLI Reference](#-dragon-cli-reference)
 - [📚 Core Philosophy](#-core-philosophy)
 - [🌟 Development Phases](#-development-phases)
 - [🎯 Experimental Goals](#-experimental-goals)
@@ -42,7 +42,7 @@ Spec-Driven Development **flips the script** on traditional software development
 
 ## ⚡ Get Started
 
-### 1. Install Specify CLI
+### 1. Install Dragon CLI
 
 Choose your preferred installation method:
 
@@ -51,20 +51,20 @@ Choose your preferred installation method:
 Install once and use everywhere:
 
 ```bash
-uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+uv tool install dragon-cli --from git+https://github.com/helloandworlder/dragon-kit.git
 ```
 
 Then use the tool directly:
 
 ```bash
-specify init <PROJECT_NAME>
-specify check
+dragon init <PROJECT_NAME>
+dragon check
 ```
 
-To upgrade Specify, see the [Upgrade Guide](./docs/upgrade.md) for detailed instructions. Quick upgrade:
+To upgrade Dragon, see the [Upgrade Guide](./docs/upgrade.md) for detailed instructions. Quick upgrade:
 
 ```bash
-uv tool install specify-cli --force --from git+https://github.com/github/spec-kit.git
+uv tool install dragon-cli --force --from git+https://github.com/helloandworlder/dragon-kit.git
 ```
 
 #### Option 2: One-time Usage
@@ -72,7 +72,7 @@ uv tool install specify-cli --force --from git+https://github.com/github/spec-ki
 Run directly without installing:
 
 ```bash
-uvx --from git+https://github.com/github/spec-kit.git specify init <PROJECT_NAME>
+uvx --from git+https://github.com/helloandworlder/dragon-kit.git dragon init <PROJECT_NAME>
 ```
 
 **Benefits of persistent installation:**
@@ -128,9 +128,9 @@ For detailed step-by-step instructions, see our [comprehensive guide](./spec-dri
 
 ## 📽️ Video Overview
 
-Want to see Spec Kit in action? Watch our [video overview](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)!
+Want to see Dragon Kit in action? Watch our [video overview](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)!
 
-[![Spec Kit video header](/media/spec-kit-video-header.jpg)](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)
+[![Dragon Kit video header](/media/spec-kit-video-header.jpg)](https://www.youtube.com/watch?v=a9eR1xsfvHg&pp=0gcJCckJAYcqIYzv)
 
 ## 🤖 Supported AI Agents
 
@@ -151,24 +151,25 @@ Want to see Spec Kit in action? Watch our [video overview](https://www.youtube.c
 | [Amazon Q Developer CLI](https://aws.amazon.com/developer/learning/q-developer-cli/) | ⚠️ | Amazon Q Developer CLI [does not support](https://github.com/aws/amazon-q-developer-cli/issues/3064) custom arguments for slash commands. |
 | [Amp](https://ampcode.com/) | ✅ | |
 | [SHAI (OVHcloud)](https://github.com/ovh/shai) | ✅ | |
+| [Droid CLI](https://docs.factory.ai/droid-cli) | ✅ | Requires `.factory/commands` folder populated by Dragon Kit |
 
-## 🔧 Specify CLI Reference
+## 🔧 Dragon CLI Reference
 
-The `specify` command supports the following options:
+The `dragon` command supports the following options:
 
 ### Commands
 
 | Command     | Description                                                    |
 |-------------|----------------------------------------------------------------|
-| `init`      | Initialize a new Specify project from the latest template      |
-| `check`     | Check for installed tools (`git`, `claude`, `gemini`, `code`/`code-insiders`, `cursor-agent`, `windsurf`, `qwen`, `opencode`, `codex`, `shai`) |
+| `init`      | Initialize a new Dragon project from the latest template      |
+| `check`     | Check for installed tools (`git`, `claude`, `gemini`, `code`/`code-insiders`, `cursor-agent`, `windsurf`, `qwen`, `opencode`, `codex`, `shai`, `droid`) |
 
-### `specify init` Arguments & Options
+### `dragon init` Arguments & Options
 
 | Argument/Option        | Type     | Description                                                                  |
 |------------------------|----------|------------------------------------------------------------------------------|
 | `<project-name>`       | Argument | Name for your new project directory (optional if using `--here`, or use `.` for current directory) |
-| `--ai`                 | Option   | AI assistant to use: `claude`, `gemini`, `copilot`, `cursor-agent`, `qwen`, `opencode`, `codex`, `windsurf`, `kilocode`, `auggie`, `roo`, `codebuddy`, `amp`, `shai`, or `q` |
+| `--ai`                 | Option   | AI assistant to use: `claude`, `gemini`, `copilot`, `cursor-agent`, `qwen`, `opencode`, `codex`, `windsurf`, `kilocode`, `auggie`, `roo`, `codebuddy`, `amp`, `shai`, `droid`, or `q` |
 | `--script`             | Option   | Script variant to use: `sh` (bash/zsh) or `ps` (PowerShell)                 |
 | `--ignore-agent-tools` | Flag     | Skip checks for AI agent tools like Claude Code                             |
 | `--no-git`             | Flag     | Skip git repository initialization                                          |
@@ -177,57 +178,61 @@ The `specify` command supports the following options:
 | `--skip-tls`           | Flag     | Skip SSL/TLS verification (not recommended)                                 |
 | `--debug`              | Flag     | Enable detailed debug output for troubleshooting                            |
 | `--github-token`       | Option   | GitHub token for API requests (or set GH_TOKEN/GITHUB_TOKEN env variable)  |
+| `--docs`               | Option   | Document overrides to apply (`AGENTS`, `CLAUDE`, or both) when initializing |
 
 ### Examples
 
 ```bash
 # Basic project initialization
-specify init my-project
+dragon init my-project
 
 # Initialize with specific AI assistant
-specify init my-project --ai claude
+dragon init my-project --ai claude
 
 # Initialize with Cursor support
-specify init my-project --ai cursor-agent
+dragon init my-project --ai cursor-agent
 
 # Initialize with Windsurf support
-specify init my-project --ai windsurf
+dragon init my-project --ai windsurf
 
 # Initialize with Amp support
-specify init my-project --ai amp
+dragon init my-project --ai amp
 
 # Initialize with SHAI support
-specify init my-project --ai shai
+dragon init my-project --ai shai
+
+# Initialize with Droid CLI support
+dragon init my-project --ai droid
 
 # Initialize with PowerShell scripts (Windows/cross-platform)
-specify init my-project --ai copilot --script ps
+dragon init my-project --ai copilot --script ps
 
 # Initialize in current directory
-specify init . --ai copilot
+dragon init . --ai copilot
 # or use the --here flag
-specify init --here --ai copilot
+dragon init --here --ai copilot
 
 # Force merge into current (non-empty) directory without confirmation
-specify init . --force --ai copilot
+dragon init . --force --ai copilot
 # or
-specify init --here --force --ai copilot
+dragon init --here --force --ai copilot
 
 # Skip git initialization
-specify init my-project --ai gemini --no-git
+dragon init my-project --ai gemini --no-git
 
 # Enable debug output for troubleshooting
-specify init my-project --ai claude --debug
+dragon init my-project --ai claude --debug
 
 # Use GitHub token for API requests (helpful for corporate environments)
-specify init my-project --ai claude --github-token ghp_your_token_here
+dragon init my-project --ai claude --github-token ghp_your_token_here
 
 # Check system requirements
-specify check
+dragon check
 ```
 
 ### Available Slash Commands
 
-After running `specify init`, your AI coding agent will have access to these slash commands for structured development:
+After running `dragon init`, your AI coding agent will have access to these slash commands for structured development:
 
 #### Core Commands
 
@@ -322,52 +327,52 @@ If you encounter issues with an agent, please open an issue so we can refine the
 <details>
 <summary>Click to expand the detailed step-by-step walkthrough</summary>
 
-You can use the Specify CLI to bootstrap your project, which will bring in the required artifacts in your environment. Run:
+You can use the Dragon CLI to bootstrap your project, which will bring in the required artifacts in your environment. Run:
 
 ```bash
-specify init <project_name>
+dragon init <project_name>
 ```
 
 Or initialize in the current directory:
 
 ```bash
-specify init .
+dragon init .
 # or use the --here flag
-specify init --here
+dragon init --here
 # Skip confirmation when the directory already has files
-specify init . --force
+dragon init . --force
 # or
-specify init --here --force
+dragon init --here --force
 ```
 
-![Specify CLI bootstrapping a new project in the terminal](./media/specify_cli.gif)
+![Dragon CLI bootstrapping a new project in the terminal](./media/specify_cli.gif)
 
 You will be prompted to select the AI agent you are using. You can also proactively specify it directly in the terminal:
 
 ```bash
-specify init <project_name> --ai claude
-specify init <project_name> --ai gemini
-specify init <project_name> --ai copilot
+dragon init <project_name> --ai claude
+dragon init <project_name> --ai gemini
+dragon init <project_name> --ai copilot
 
 # Or in current directory:
-specify init . --ai claude
-specify init . --ai codex
+dragon init . --ai claude
+dragon init . --ai codex
 
 # or use --here flag
-specify init --here --ai claude
-specify init --here --ai codex
+dragon init --here --ai claude
+dragon init --here --ai codex
 
 # Force merge into a non-empty current directory
-specify init . --force --ai claude
+dragon init . --force --ai claude
 
 # or
-specify init --here --force --ai claude
+dragon init --here --force --ai claude
 ```
 
 The CLI will check if you have Claude Code, Gemini CLI, Cursor CLI, Qwen CLI, opencode, Codex CLI, or Amazon Q Developer CLI installed. If you do not, or you prefer to get the templates without checking for the right tools, use `--ignore-agent-tools` with your command:
 
 ```bash
-specify init <project_name> --ai claude --ignore-agent-tools
+dragon init <project_name> --ai claude --ignore-agent-tools
 ```
 
 ### **STEP 1:** Establish project principles
@@ -626,7 +631,7 @@ rm gcm-linux_amd64.2.6.1.deb
 
 ## 💬 Support
 
-For support, please open a [GitHub issue](https://github.com/github/spec-kit/issues/new). We welcome bug reports, feature requests, and questions about using Spec-Driven Development.
+For support, please open a [GitHub issue](https://github.com/helloandworlder/dragon-kit/issues/new). We welcome bug reports, feature requests, and questions about using Spec-Driven Development.
 
 ## 🙏 Acknowledgements
 

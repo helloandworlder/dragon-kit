@@ -73,6 +73,7 @@ CODEBUDDY_FILE="$REPO_ROOT/CODEBUDDY.md"
 AMP_FILE="$REPO_ROOT/AGENTS.md"
 SHAI_FILE="$REPO_ROOT/SHAI.md"
 Q_FILE="$REPO_ROOT/AGENTS.md"
+DROID_FILE="$REPO_ROOT/.factory/commands/dragon-rules.md"
 
 # Template file
 TEMPLATE_FILE="$REPO_ROOT/.specify/templates/agent-file-template.md"
@@ -622,12 +623,15 @@ update_specific_agent() {
         shai)
             update_agent_file "$SHAI_FILE" "SHAI"
             ;;
+        droid)
+            update_agent_file "$DROID_FILE" "Droid CLI"
+            ;;
         q)
             update_agent_file "$Q_FILE" "Amazon Q Developer CLI"
             ;;
         *)
             log_error "Unknown agent type '$agent_type'"
-            log_error "Expected: claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|kilocode|auggie|roo|amp|shai|q"
+            log_error "Expected: claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|kilocode|auggie|roo|codebuddy|amp|shai|droid|q"
             exit 1
             ;;
     esac
@@ -692,8 +696,18 @@ update_all_existing_agents() {
         found_agent=true
     fi
 
+    if [[ -f "$AMP_FILE" ]]; then
+        update_agent_file "$AMP_FILE" "Amp"
+        found_agent=true
+    fi
+
     if [[ -f "$SHAI_FILE" ]]; then
         update_agent_file "$SHAI_FILE" "SHAI"
+        found_agent=true
+    fi
+
+    if [[ -f "$DROID_FILE" ]]; then
+        update_agent_file "$DROID_FILE" "Droid CLI"
         found_agent=true
     fi
 
@@ -726,7 +740,7 @@ print_summary() {
     
     echo
 
-    log_info "Usage: $0 [claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|kilocode|auggie|codebuddy|shai|q]"
+    log_info "Usage: $0 [claude|gemini|copilot|cursor-agent|qwen|opencode|codex|windsurf|kilocode|auggie|roo|codebuddy|amp|shai|droid|q]"
 }
 
 #==============================================================================

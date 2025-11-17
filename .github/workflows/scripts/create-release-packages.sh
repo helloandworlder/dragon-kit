@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # create-release-packages.sh (workflow-local)
-# Build Spec Kit template release archives for each supported AI assistant and script type.
+# Build Dragon Kit template release archives for each supported AI assistant and script type.
 # Usage: .github/workflows/scripts/create-release-packages.sh <version>
 #   Version argument should include leading 'v'.
 #   Optionally set AGENTS and/or SCRIPTS env vars to limit what gets built.
-#     AGENTS  : space or comma separated subset of: claude gemini copilot cursor-agent qwen opencode windsurf codex amp shai (default: all)
+#     AGENTS  : space or comma separated subset of: claude gemini copilot cursor-agent qwen opencode windsurf codex amp shai droid (default: all)
 #     SCRIPTS : space or comma separated subset of: sh ps (default: both)
 #   Examples:
 #     AGENTS=claude SCRIPTS=sh $0 v0.2.0
@@ -23,7 +23,7 @@ if [[ ! $NEW_VERSION =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
-echo "Building release packages for $NEW_VERSION"
+echo "Building Dragon Kit release packages for $NEW_VERSION"
 
 # Create and use .genreleases directory for all build artifacts
 GENRELEASES_DIR=".genreleases"
@@ -85,6 +85,22 @@ generate_commands() {
       in_frontmatter && skip_scripts && /^[[:space:]]/ { next }
       { print }
     ')
+
+    usage_note=$'::: tip 使用说明（Usage）\n1. 在 __AGENT__ 内执行本命令前，请通读描述并准备足够上下文。\n2. 如命令包含 `$ARGUMENTS` 或 {{args}} 占位符，请自行替换真实输入；`{SCRIPT}` 会在运行时注入具体脚本路径。\n3. 全程使用专业的简体中文沟通，若需其他语言请在上下文标明。\n:::\n'
+
+    body=$(printf '%s\n' "$body" | awk -v note="$usage_note" '
+      BEGIN {dash=0; inserted=0}
+      {
+        print
+        if ($0 ~ /^---$/) {
+          dash++
+          if (dash==2 && !inserted) {
+            printf "\n%s\n", note
+            inserted=1
+          }
+        }
+      }
+    ')
     
     # Apply other substitutions
     body=$(printf '%s\n' "$body" | sed "s/{ARGS}/$arg_format/g" | sed "s/__AGENT__/$agent/g" | rewrite_paths)
@@ -123,7 +139,7 @@ EOF
 
 build_variant() {
   local agent=$1 script=$2
-  local base_dir="$GENRELEASES_DIR/sdd-${agent}-package-${script}"
+  local base_dir="$GENRELEASES_DIR/dragon-${agent}-package-${script}"
   echo "Building $agent ($script) package..."
   mkdir -p "$base_dir"
   
@@ -208,16 +224,19 @@ build_variant() {
     shai)
       mkdir -p "$base_dir/.shai/commands"
       generate_commands shai md "\$ARGUMENTS" "$base_dir/.shai/commands" "$script" ;;
+    droid)
+      mkdir -p "$base_dir/.factory/commands"
+      generate_commands droid md "\$ARGUMENTS" "$base_dir/.factory/commands" "$script" ;;
     q)
       mkdir -p "$base_dir/.amazonq/prompts"
       generate_commands q md "\$ARGUMENTS" "$base_dir/.amazonq/prompts" "$script" ;;
   esac
-  ( cd "$base_dir" && zip -r "../spec-kit-template-${agent}-${script}-${NEW_VERSION}.zip" . )
-  echo "Created $GENRELEASES_DIR/spec-kit-template-${agent}-${script}-${NEW_VERSION}.zip"
+  ( cd "$base_dir" && zip -r "../dragon-kit-template-${agent}-${script}-${NEW_VERSION}.zip" . )
+  echo "Created $GENRELEASES_DIR/dragon-kit-template-${agent}-${script}-${NEW_VERSION}.zip"
 }
 
 # Determine agent list
-ALL_AGENTS=(claude gemini copilot cursor-agent qwen opencode windsurf codex kilocode auggie roo codebuddy amp shai q)
+ALL_AGENTS=(claude gemini copilot cursor-agent qwen opencode windsurf codex kilocode auggie roo codebuddy amp shai droid q)
 ALL_SCRIPTS=(sh ps)
 
 norm_list() {
@@ -263,5 +282,5 @@ for agent in "${AGENT_LIST[@]}"; do
 done
 
 echo "Archives in $GENRELEASES_DIR:"
-ls -1 "$GENRELEASES_DIR"/spec-kit-template-*-"${NEW_VERSION}".zip
+ls -1 "$GENRELEASES_DIR"/dragon-kit-template-*-"${NEW_VERSION}".zip
 

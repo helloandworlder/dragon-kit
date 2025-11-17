@@ -1,7 +1,7 @@
 [project]
-name = "specify-cli"
-version = "0.0.22"
-description = "Specify CLI, part of GitHub Spec Kit. A tool to bootstrap your projects for Spec-Driven Development (SDD)."
+name = "dragon-cli"
+version = "1.0.0"
+description = "Dragon CLI，面向次世代 Spec-Driven Development（SDD）的脚手架工具。"
 requires-python = ">=3.11"
 dependencies = [
     "typer",
@@ -13,12 +13,12 @@ dependencies = [
 ]
 
 [project.scripts]
-specify = "specify_cli:main"
+dragon = "dragon_cli:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/specify_cli"]
+packages = ["src/dragon_cli"]
 
