@@ -37,7 +37,7 @@
 ## 四、文档与命令（Droid/Dragon 扩展）
 
 1. **.factory/commands**：对接 Droid CLI 的命令文件由 Dragon Kit 自动生成，命令体内已注入「使用说明（中文）」；代理在补充说明时应保持同样语气与排版。
-2. **AGENTS/CLAUDE 覆盖**：`dragon init` 支持从 `~/.specify/<DOC>.md` 覆盖项目文档；若任务涉及这些文档需优先读取本地覆盖版本并注明来源层级（全局 vs 项目）。
+2. **AGENTS/CLAUDE 覆盖**：`dragon init` 支持从 `~/.dragon/<DOC>.md` 覆盖项目文档；若任务涉及这些文档需优先读取本地覆盖版本并注明来源层级（全局 vs 项目）。
 3. **安装与版本**：默认依赖 `uv tool install dragon-cli --from git+https://github.com/helloandworlder/dragon-kit.git`；如需 CLI/IDE 额外扩展请在方案中列明并给出官方链接。
 
 ## 五、质量基线

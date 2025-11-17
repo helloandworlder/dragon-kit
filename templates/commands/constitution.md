@@ -1,5 +1,5 @@
 ---
-description: Create or update the project constitution from interactive or provided principle inputs, ensuring all dependent templates stay in sync.
+description: 基于交互/输入创建或更新项目宪章，并保证相关模板同步。
 handoffs: 
   - label: Build Specification
     agent: speckit.specify

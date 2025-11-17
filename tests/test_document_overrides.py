@@ -5,6 +5,7 @@ import pytest
 from dragon_cli.__init__ import (
     DEFAULT_DOCS_DIR,
     apply_document_overrides,
+    normalize_doc_keys,
     resolve_document_override_source,
 )
 
@@ -17,9 +18,9 @@ def prepare_repo_file(repo_root: Path, name: str, content: str = "repo") -> Path
 
 
 def prepare_home_file(home_root: Path, name: str, content: str = "home") -> Path:
-    spec_dir = home_root / ".specify"
-    spec_dir.mkdir(parents=True, exist_ok=True)
-    target = spec_dir / name
+    dragon_dir = home_root / ".dragon"
+    dragon_dir.mkdir(parents=True, exist_ok=True)
+    target = dragon_dir / name
     target.write_text(content, encoding="utf-8")
     return target
 
@@ -74,3 +75,15 @@ def test_resolve_document_override_uses_packaged_defaults(tmp_path: Path):
 
     assert source is not None
     assert source.read_text(encoding="utf-8") == (DEFAULT_DOCS_DIR / "AGENTS.md").read_text(encoding="utf-8")
+
+
+def test_normalize_doc_keys_preserves_priority_and_aliases():
+    ordered, invalid = normalize_doc_keys(["c", "a"])
+    assert invalid == []
+    assert ordered == ["AGENTS", "CLAUDE"]
+
+
+def test_normalize_doc_keys_accepts_ac_shortcut():
+    ordered, invalid = normalize_doc_keys(["ac"])
+    assert invalid == []
+    assert ordered == ["AGENTS", "CLAUDE"]

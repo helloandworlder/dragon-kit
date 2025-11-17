@@ -240,6 +240,13 @@ TAGLINE = "Dragon Kit · 次世代规范驱动开发工具包"
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent.parent
 ASSETS_ROOT = Path(__file__).resolve().parent / "assets"
 DEFAULT_DOCS_DIR = ASSETS_ROOT / "docs"
+DOC_SELECTION_ORDER = ["AGENTS", "CLAUDE"]
+DOC_KEY_ALIASES = {
+    "AGENTS": "AGENTS",
+    "A": "AGENTS",
+    "CLAUDE": "CLAUDE",
+    "C": "CLAUDE",
+}
 
 DOC_OVERRIDE_REGISTRY = {
     "AGENTS": {
@@ -262,7 +269,7 @@ def resolve_document_override_source(
     """Return the preferred override source for a documentation file.
 
     Preference order:
-    1. ~/.specify/<filename>
+    1. ~/.dragon/<filename>
     2. Packaged fallback within the CLI repository
     """
 
@@ -270,7 +277,7 @@ def resolve_document_override_source(
     home_root = home_root or Path.home()
 
     candidates = [
-        home_root / ".specify" / filename,
+        home_root / ".dragon" / filename,
         repo_root / filename,
         DEFAULT_DOCS_DIR / filename,
     ]
@@ -312,6 +319,65 @@ def apply_document_overrides(
         copied.add(key_upper)
 
     return copied
+
+
+def normalize_doc_keys(doc_values: Iterable[str]) -> Tuple[list[str], list[str]]:
+    """Normalize doc selection tokens while preserving AGENTS -> CLAUDE ordering."""
+
+    normalized: list[str] = []
+    invalid: list[str] = []
+
+    for value in doc_values:
+        if not value:
+            continue
+        token = value.upper()
+        if token in {"AC", "CA", "ALL", "BOTH"}:
+            normalized.extend(DOC_SELECTION_ORDER)
+            continue
+        mapped = DOC_KEY_ALIASES.get(token)
+        if mapped:
+            normalized.append(mapped)
+        else:
+            invalid.append(value)
+
+    ordered: list[str] = []
+    for doc in DOC_SELECTION_ORDER:
+        if doc in normalized and doc not in ordered:
+            ordered.append(doc)
+
+    return ordered, invalid
+
+
+def prompt_document_override_selection() -> list[str]:
+    """Prompt user to select document overrides with single input."""
+
+    prompt_lines = [
+        "请选择文档覆盖策略:",
+        "[AC] 同时覆盖 AGENTS.md 与 CLAUDE.md",
+        "[A] 仅覆盖 AGENTS.md",
+        "[C] 仅覆盖 CLAUDE.md",
+        "[N] 不覆盖",
+    ]
+    default_choice = "AC"
+
+    while True:
+        choice = typer.prompt("\n".join(prompt_lines), default=default_choice)
+        if choice is None:
+            choice = default_choice
+        choice = choice.strip().upper()
+        if not choice:
+            choice = default_choice
+
+        if choice in {"AC", "CA", "ALL", "BOTH"}:
+            return DOC_SELECTION_ORDER.copy()
+        if choice in {"A", "AGENTS"}:
+            return ["AGENTS"]
+        if choice in {"C", "CLAUDE"}:
+            return ["CLAUDE"]
+        if choice in {"N", "NO", "NONE"}:
+            return []
+
+        console.print("[yellow]输入无效，请输入 AC/A/C/N[/yellow]")
 class StepTracker:
     """Track and render hierarchical steps without emojis, similar to Claude Code tree output.
     Supports live auto-refresh via an attached refresh callback.
@@ -1137,20 +1203,14 @@ def init(
 
     selected_docs: list[str] = []
     if docs:
-        selected_docs = [doc.upper() for doc in docs]
+        selected_docs, invalid_docs = normalize_doc_keys(docs)
+        for invalid in invalid_docs:
+            console.print(f"[yellow]提示：[/yellow] 忽略未知文档选项 {invalid}")
     elif sys.stdin.isatty():
-        for key, config in DOC_OVERRIDE_REGISTRY.items():
-            if typer.confirm(config["prompt"], default=False):
-                selected_docs.append(key)
+        selected_docs = prompt_document_override_selection()
 
-    normalized_docs = []
-    for doc in selected_docs:
-        key = doc.upper()
-        if key in DOC_OVERRIDE_REGISTRY and key not in normalized_docs:
-            normalized_docs.append(key)
-        elif key not in DOC_OVERRIDE_REGISTRY:
-            console.print(f"[yellow]提示：[/yellow] 忽略未知文档选项 {doc}")
-    selected_docs = normalized_docs
+    # Ensure final order始终为 AGENTS -> CLAUDE
+    selected_docs, _ = normalize_doc_keys(selected_docs or [])
 
     if selected_docs:
         console.print(f"[cyan]文档覆盖：[/cyan] {', '.join(selected_docs)}")

@@ -1,5 +1,5 @@
 ---
-description: Generate an actionable, dependency-ordered tasks.md for the feature based on available design artifacts.
+description: 基于现有设计资料生成一份具备依赖顺序的 tasks.md。
 handoffs: 
   - label: Analyze For Consistency
     agent: speckit.analyze
